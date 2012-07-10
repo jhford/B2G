@@ -8,21 +8,24 @@ error () {
     exit 1 
 }
 
-# If realpath isn't available in a lot of places we care about,
-# we could start using "readlink -f <file>"
-b2g_root=$1 ; shift
-if [ x$b2g_root == "x" ] ; then
-    echo "Assuming B2G root of \"$PWD\" (pwd)"
-    b2g_root="."
-fi
-b2g_root=$(realpath $b2g_root)
+# Specify some defaults
+GECKO_OBJDIR=objdir-gecko
+OUT_DIR=out
+DEVICE="unknown"
+
+# This script should (and currently does) fail if the .config
+# file is not present
+. load-config.sh
+
+b2g_root=$(cd `dirname $0` ; pwd)
 
 output=$1 ; shift
 if [ x$output == "x" ] ; then
     echo "Assuming output base name of \"B2G\""
     output="B2G"
 fi
-output=$(realpath $output)
+# Figure out the absolute path for the output base
+output=$(cd `dirname $output` ; echo `pwd`/`basename $output`)
 
 # Create a manifest that describes the state of the repositories
 # that created this source tree
@@ -35,20 +38,11 @@ if [[ -f $b2g_root/.repo/manifest.xml && -x $b2g_root/gonk-misc/add-revision.py 
         echo "Done!  The manifest file is located at \"$manifest_file\""
     else
         error "Failed to create manifest"
+    fi
 else
     error "Either there is no repo manifest or gonk-misc/add_revision.py is not executable"
 fi
 
-if [ ! -f $b2g_root/.config ] ; then
-    error "config.sh was not run for this source root. "\
-        "You will ned to run config.sh for a device "\
-        "since the contents of the source dump depend on which "\
-        "device the tree is configured for"
-fi
-
-# Slurp in the Gecko Objdir
-GECKO_OBJDIR=objdir-gecko
-eval `grep -h GECKO_OBJDIR $b2g_root/.config $b2g_root/.userconfig 2> /dev/null`
 # If the GECKO_OBJDIR is absolute, we don't need to change it
 if [ ! -d $GECKO_OBJDIR ] ; then
     # but if it isn't, lets address it relative to the b2g root
@@ -60,22 +54,15 @@ if [ ! -d $GECKO_OBJDIR ] ; then
 fi
 
 
-# Slurp in Android's output directory (OUT_DIR) 
-OUT_DIR=out
-eval `grep -h OUT_DIR $b2g_root/.config $b2g_root/.userconfig 2> /dev/null`
 if [ ! -d $OUT_DIR ] ; then
     OUT_DIR="$b2g_root/$OUT_DIR"
 fi
-# If it still doesn't exist, we probably haven't built yet
 if [ ! -d $OUT_DIR ] ; then
     OUT_DIR=""
 fi
 
-# Slurp in the Device name (Assumes the previous check for .config is still valid
-DEVICE="unknown"
-eval `grep -h DEVICE $b2g_root/.config 2> /dev/null`
 if [ $DEVICE == "unknown" ] ; then
-    error "no device specified in $b2g_root/.config. Did you run $b2g_root/config.sh?"
+    error "no DEVICE specified in $b2g_root/.config. Did you run $b2g_root/config.sh?"
 fi
 
 # These are useful values, lets keep them around
@@ -99,7 +86,7 @@ if [ "x$OUT_DIR" != "x" ] ; then
 fi
 
 # Compute the actual output filename we'll use
-real_output="$output-$DEVICE$TAR_EXT"
+real_output="$output-$DEVICE.tar.gz"
 
 # If the real output file is to be under the B2G root,
 # we want to exclude it
@@ -110,7 +97,7 @@ fi
 
 echo "Creating tarball"
 
-tar zcf "$real_output" \
+echo nice tar zcf "$real_output" \
     -C $b2g_parent \
     --checkpoint=1000 \
     --checkpoint-action=dot \
@@ -127,7 +114,7 @@ tar zcf "$real_output" \
     $manifest_file $b2g_basename
 if [ $? -eq 0 ] ; then
     echo 'Done!'
-    echo "SNAPSHOT_OUTPUT: \"$(realpath $real_output)\""
+    echo "SNAPSHOT_OUTPUT: \"$real_output\""
     echo "DEVICE: \"$DEVICE\""
 else
     error "tar failed"
