@@ -72,8 +72,50 @@ esac
 # are to be used
 gitrepo="git://github.com/mozilla-b2g/b2g-manifest"
 branch=master
-device=$1
-tmp_manifest=$2
+device=""
+tmp_manifest=""
+
+# Parse the command line
+while [ $# -gt 0 ] ; do
+    case $1 in
+        "--branch" | "-b")
+            shift
+            branch=$1
+            ;;
+        "--git-repo" | "-g")
+            shift
+            gitrepo=$1
+            ;;
+        "--manifest")
+            # There is no shortform for this because I don't want to cause
+            # confusion between ./repo -m and ./config.sh -m
+            shift
+            tmp_manifest=$1
+            ;;
+        "*.xml")
+            shift
+            # This is deprecated and also a little messy.  I think assuming a .xml
+            # file is a local manifest is a reasonable assumption in the short term
+            error "Using $1 as a bare argument is deprecated.  Please use \"--manifest $1\""
+            tmp_manifest=$1
+            ;;
+        "--device" | "-d")
+            shift
+            device=$1
+            ;;
+        galaxy-s2 | galaxy-nexus | nexus-s | otoro | emulator | emulator-x86 | pandaboard)
+            # Because using $0 <device> has been around for a while, we should
+            # avoid breaking it *for now*
+            error "Using $1 as a bare argument is deprecated.  Please use \"-d/--device $1\""
+            device=$1
+            ;;
+        *)
+            echo "$1 is not a valid option"
+            print_usage
+            exit -1
+    esac
+    shift
+done
 
 
 # If a local manifest file was requested, we should create the local
