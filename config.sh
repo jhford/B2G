@@ -1,6 +1,7 @@
 #!/bin/bash
 
 REPO=./repo
+GIT_TEMP_REPO="tmp_manifest_repo"
 
 print_usage() {
     echo "Usage: $0 [-d <device_name>] [-b <branch>] [-g <manifest_repo>] [--manifest <local_manifest>]"
@@ -39,21 +40,17 @@ create_manifest_repo() {
     popd > /dev/null
 }
 
+# Run the intial repo init and repo sycn commands
 repo_sync() {
-	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
-		BRANCH="master"
-	else
-		BRANCH=$1
-	fi
+    gitrepo=$1 ; shift
+    branch=$1 ; shift
+    device=$1 ; shift
 	rm -rf .repo/manifest* &&
-	$REPO init -u $GITREPO -b $BRANCH &&
+	$REPO init -u ${gitrepo} -b ${branch} -m ${device}.xml &&
 	$REPO sync
 	ret=$?
-	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
-		rm -rf $GIT_TEMP_REPO
-	fi
 	if [ $ret -ne 0 ]; then
-		echo Repo sync failed
+		error Repo sync failed
 		exit -1
 	fi
 }
@@ -70,59 +67,80 @@ case `uname` in
 	exit -1
 esac
 
-GIT_TEMP_REPO="tmp_manifest_repo"
-if [ -n "$2" ]; then
-    create_manifest_repo $2 $GIT_TEMP_REPO $1
-    GITREPO=$GIT_TEMP_REPO
-else
-	GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
+# These are the default values.  Those that are empty strings
+# are values that must be obtained from the command line if they
+# are to be used
+gitrepo="git://github.com/mozilla-b2g/b2g-manifest"
+branch=master
+device=$1
+tmp_manifest=$2
+
+
+# If a local manifest file was requested, we should create the local
+# repository needed to do repo initialization and sync against
+if [ $tmp_manifest ] ; then
+    echo "Creating a temporary Git repository"
+    create_manifest_repo $tmp_manifest $GIT_TEMP_REPO $device
+    gitrepo=$GIT_TEMP_REPO
+    if [ $branch != 'master' ] ; then
+        echo "NOTE: overriding your branch because local manifest always use 'master'"
+    fi
+    branch=master
 fi
 
-case "$1" in
+# Do device specifc actions
+case "$device" in
 "galaxy-s2")
 	echo DEVICE=galaxys2 > .config &&
-	repo_sync galaxy-s2 &&
+	repo_sync $gitrepo $branch galaxy-s2 &&
 	(cd device/samsung/galaxys2 && ./extract-files.sh)
 	;;
 
 "galaxy-nexus")
 	echo DEVICE=maguro > .config &&
-	repo_sync maguro &&
+	repo_sync $gitrepo $branch maguro &&
 	(cd device/samsung/maguro && ./download-blobs.sh)
 	;;
 
 "nexus-s")
 	echo DEVICE=crespo > .config &&
-	repo_sync crespo &&
+	repo_sync $gitrepo $branch crespo &&
 	(cd device/samsung/crespo && ./download-blobs.sh)
 	;;
 
 "otoro")
 	echo DEVICE=otoro > .config &&
-	repo_sync otoro &&
+	repo_sync $gitrepo $branch otoro &&
 	(cd device/qcom/otoro && ./extract-files.sh)
+	;;
+
+"pandaboard")
+	echo DEVICE=panda > .config &&
+	repo_sync $gitrepo $branch panda &&
+	(cd device/ti/panda && ./download-blobs.sh)
 	;;
 
 "emulator")
 	echo DEVICE=generic > .config &&
 	echo LUNCH=full-eng >> .config &&
-	repo_sync master
+	repo_sync $gitrepo $branch emulator
 	;;
 
 "emulator-x86")
 	echo DEVICE=generic_x86 > .config &&
 	echo LUNCH=full_x86-eng >> .config &&
-	repo_sync master
+	repo_sync $gitrepo $branch emulator
 	;;
 
 *)
-	echo Usage: $0 \(device name\)
+	print_usage
 	echo
 	echo Valid devices to configure are:
 	echo - galaxy-s2
 	echo - galaxy-nexus
 	echo - nexus-s
 	echo - otoro
+	echo - pandaboard
 	echo - emulator
 	echo - emulator-x86
 	exit -1
@@ -132,6 +150,11 @@ esac
 if [ $? -ne 0 ]; then
 	echo Configuration failed
 	exit -1
+fi
+
+# If we created a temporary manifest repository, we want to clean it up
+if [ $tmp_manifest ] ; then
+    rm -rf $GIT_TEMP_REPO
 fi
 
 echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) >> .config
