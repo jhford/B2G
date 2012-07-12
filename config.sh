@@ -2,6 +2,29 @@
 
 REPO=./repo
 
+print_usage() {
+    echo "Usage: $0 [-d <device_name>] [-b <branch>] [-g <manifest_repo>] [--manifest <local_manifest>]"
+    echo
+    echo "=================================================================================="
+    echo "  -d/--device: This option is used to select a specific device to configure for."
+    echo "               the list of available devices can be obtained by running $0 with"
+    echo "               no arguments"
+    echo "  -b/--branch: This option controls which branch of b2g-manifest to use.  This is"
+    echo "               the option you'll want to use when you are selecting a specific"
+    echo "               milestone"
+    echo "  -g/--git-repo: This option lets you use a custom location for the repo manifest"
+    echo "                 repository that 'repo' will work on"
+    echo "  --manifest: This option lets you specify a local file that contains a repo"
+    echo "              manifest to use for the repo initialization and syncing operations"
+    echo "=================================================================================="
+    echo
+}
+
+error() {
+    echo "ERROR: $@" 1>&2
+}
+
+
 repo_sync() {
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
 		BRANCH="master"
