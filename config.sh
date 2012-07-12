@@ -4,12 +4,18 @@ REPO=./repo
 GIT_TEMP_REPO="tmp_manifest_repo"
 
 print_usage() {
-    echo "Usage: $0 [-d <device_name>] [-b <branch>] [-g <manifest_repo>] [--manifest <local_manifest>]"
+    echo "Usage: $0 <device_name> [-b <branch>] [-g <manifest_repo>] [--manifest <local_manifest>]"
     echo
-    echo "=================================================================================="
-    echo "  -d/--device: This option is used to select a specific device to configure for."
-    echo "               the list of available devices can be obtained by running $0 with"
-    echo "               no arguments"
+    echo "Valid devices to configure are:"
+    echo "  - galaxy-s2"
+    echo "  - galaxy-nexus"
+    echo "  - nexus-s"
+    echo "  - otoro"
+    echo "  - pandaboard"
+    echo "  - emulator"
+    echo "  - emulator-x86"
+    echo
+    echo " Explanation of config.sh options"
     echo "  -b/--branch: This option controls which branch of b2g-manifest to use.  This is"
     echo "               the option you'll want to use when you are selecting a specific"
     echo "               milestone"
@@ -17,8 +23,8 @@ print_usage() {
     echo "                 repository that 'repo' will work on"
     echo "  --manifest: This option lets you specify a local file that contains a repo"
     echo "              manifest to use for the repo initialization and syncing operations"
-    echo "=================================================================================="
     echo
+    exit -1
 }
 
 error() {
@@ -76,6 +82,10 @@ device=""
 tmp_manifest=""
 
 # Parse the command line
+
+# If there are no arguments, pring usage information
+if [ $# -eq 0 ] ; then print_usage ; fi
+
 while [ $# -gt 0 ] ; do
     case $1 in
         "--branch" | "-b")
@@ -92,31 +102,25 @@ while [ $# -gt 0 ] ; do
             shift
             tmp_manifest=$1
             ;;
-        "*.xml")
-            shift
+        *.xml)
             # This is deprecated and also a little messy.  I think assuming a .xml
             # file is a local manifest is a reasonable assumption in the short term
-            error "Using $1 as a bare argument is deprecated.  Please use \"--manifest $1\""
+            error "Using $1 as a bare argument is deprecated.  Please use \"$0 --manifest $1\""
             tmp_manifest=$1
             ;;
-        "--device" | "-d")
-            shift
-            device=$1
-            ;;
-        galaxy-s2 | galaxy-nexus | nexus-s | otoro | emulator | emulator-x86 | pandaboard)
-            # Because using $0 <device> has been around for a while, we should
-            # avoid breaking it *for now*
-            error "Using $1 as a bare argument is deprecated.  Please use \"-d/--device $1\""
-            device=$1
-            ;;
         *)
-            echo "$1 is not a valid option"
-            print_usage
-            exit -1
+            if [ $device ] ; then
+                error It looks like you already have specified a deivce, \"$device\"
+                exit -1
+            else
+                device=$1
+            fi
     esac
     shift
 done
 
+# We need to make sure that there was at least one device specified
+if [ -z "$device" ] ; then error "You need to specify a device!" ; exit -1 ; fi
 
 # If a local manifest file was requested, we should create the local
 # repository needed to do repo initialization and sync against
@@ -130,10 +134,10 @@ if [ $tmp_manifest ] ; then
     branch=master
 fi
 
-if [ -z "$branch" ] ; then error "You must specify a branch" ; print_usage ; exit -1 ; fi
+if [ -z "$branch" ] ; then error "You must specify a branch" ; exit -1 ; fi
 # This case should never be hit because there is a default value, but it's
 # cheap to do the check regardless
-if [ -z "$gitrepo" ] ; then error "something's broken" ; print_usage ; exit -1 ; fi
+if [ -z "$gitrepo" ] ; then error "something's broken" ; exit -1 ; fi
 
 # Do device specifc actions
 case "$device" in
