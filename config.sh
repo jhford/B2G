@@ -24,6 +24,20 @@ error() {
     echo "ERROR: $@" 1>&2
 }
 
+# When using a local manifest file, we need to create a temporary repository
+# because repo only knows how to work with manifests that are stored in git
+create_manifest_repo() {
+    manifest=$1 ; shift
+    local_repo=$1 ; shift
+    device=$1 ; shift
+    rm -rf $local_repo &&
+    git init $local_repo &&
+    cp $manifest $local_repo/${device}.xml &&
+    pushd $local_repo > /dev/null &&
+    git add ${device}.xml &&
+    git commit -m "local manifest" &&
+    popd > /dev/null
+}
 
 repo_sync() {
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
@@ -58,15 +72,8 @@ esac
 
 GIT_TEMP_REPO="tmp_manifest_repo"
 if [ -n "$2" ]; then
-	GITREPO=$GIT_TEMP_REPO
-	GITBRANCH="master"
-	rm -rf $GITREPO &&
-	git init $GITREPO &&
-	cp $2 $GITREPO/default.xml &&
-	cd $GITREPO &&
-	git add default.xml &&
-	git commit -m "manifest" &&
-	cd ..
+    create_manifest_repo $2 $GIT_TEMP_REPO $1
+    GITREPO=$GIT_TEMP_REPO
 else
 	GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
 fi
