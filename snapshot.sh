@@ -1,7 +1,4 @@
 #!/bin/bash
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 error () {
     echo ERROR: "$@"
@@ -97,7 +94,7 @@ fi
 
 echo "Creating tarball"
 
-echo nice tar zcf "$real_output" \
+nice tar zcf "$real_output" \
     -C $b2g_parent \
     --checkpoint=1000 \
     --checkpoint-action=dot \
