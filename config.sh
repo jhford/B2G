@@ -130,6 +130,11 @@ if [ $tmp_manifest ] ; then
     branch=master
 fi
 
+if [ -z "$branch" ] ; then error "You must specify a branch" ; print_usage ; exit -1 ; fi
+# This case should never be hit because there is a default value, but it's
+# cheap to do the check regardless
+if [ -z "$gitrepo" ] ; then error "something's broken" ; print_usage ; exit -1 ; fi
+
 # Do device specifc actions
 case "$device" in
 "galaxy-s2")
