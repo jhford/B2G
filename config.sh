@@ -134,52 +134,56 @@ if [ $tmp_manifest ] ; then
     branch=master
 fi
 
+
 if [ -z "$branch" ] ; then error "You must specify a branch" ; exit -1 ; fi
 # This case should never be hit because there is a default value, but it's
 # cheap to do the check regardless
 if [ -z "$gitrepo" ] ; then error "something's broken" ; exit -1 ; fi
 
+echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) > .tmp-config
+echo GECKO_OBJDIR=$PWD/objdir-gecko >> .tmp-config
+
 # Do device specifc actions
 case "$device" in
 "galaxy-s2")
-	echo DEVICE=galaxys2 > .config &&
+	echo DEVICE=galaxys2 > .tmp-config &&
 	repo_sync $gitrepo $branch galaxy-s2 &&
 	(cd device/samsung/galaxys2 && ./extract-files.sh)
 	;;
 
 "galaxy-nexus")
-	echo DEVICE=maguro > .config &&
+	echo DEVICE=maguro > .tmp-config &&
 	repo_sync $gitrepo $branch maguro &&
 	(cd device/samsung/maguro && ./download-blobs.sh)
 	;;
 
 "nexus-s")
-	echo DEVICE=crespo > .config &&
+	echo DEVICE=crespo >> .tmp-config &&
 	repo_sync $gitrepo $branch crespo &&
 	(cd device/samsung/crespo && ./download-blobs.sh)
 	;;
 
 "otoro")
-	echo DEVICE=otoro > .config &&
+	echo DEVICE=otoro > .tmp-config &&
 	repo_sync $gitrepo $branch otoro &&
 	(cd device/qcom/otoro && ./extract-files.sh)
 	;;
 
 "pandaboard")
-	echo DEVICE=panda > .config &&
+	echo DEVICE=panda > .tmp-config &&
 	repo_sync $gitrepo $branch panda &&
 	(cd device/ti/panda && ./download-blobs.sh)
 	;;
 
 "emulator")
-	echo DEVICE=generic > .config &&
-	echo LUNCH=full-eng >> .config &&
+	echo DEVICE=generic > .tmp-config &&
+	echo LUNCH=full-eng >> .tmp-config &&
 	repo_sync $gitrepo $branch emulator
 	;;
 
 "emulator-x86")
-	echo DEVICE=generic_x86 > .config &&
-	echo LUNCH=full_x86-eng >> .config &&
+	echo DEVICE=generic_x86 > .tmp-config &&
+	echo LUNCH=full_x86-eng >> .tmp-config &&
 	repo_sync $gitrepo $branch emulator
 	;;
 
@@ -208,7 +212,6 @@ if [ $tmp_manifest ] ; then
     rm -rf $GIT_TEMP_REPO
 fi
 
-echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) >> .config
-echo GECKO_OBJDIR=$PWD/objdir-gecko >> .config
+mv .tmp-config .config
 
 echo Run \|./build.sh\| to start building
