@@ -39,5 +39,6 @@ nice tar zcf "$output" \
     $b2g_basename &&
 rm $manifest_file &&
 echo Done! &&
-echo "{'output': '$b2g_root/$output'}"
+echo "{'output': '$b2g_root/$output'}" ||
+echo "ERROR: Could not create tarball"
 
