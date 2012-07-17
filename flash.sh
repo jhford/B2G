@@ -148,12 +148,13 @@ case "$PROJECT" in
 	run_adb push $GECKO_OBJDIR/dist/b2g /system/b2g &&
 	echo Restarting B2G &&
 	run_adb shell stop b2g &&
-	run_adb shell start b2g &&
+	run_adb shell start b2g
 	exit $?
 	;;
 
 "gaia")
 	make -C gaia install-gaia ADB="$ADB"
+	make -C gaia install-media-samples ADB="$ADB"
 	exit $?
 	;;
 
@@ -165,24 +166,28 @@ esac
 
 case "$DEVICE" in
 "otoro")
-	flash_fastboot nounlock $1
+	flash_fastboot nounlock $PROJECT
+	;;
+
+"panda")
+	flash_fastboot unlock $PROJECT
 	;;
 
 "maguro")
-	flash_fastboot unlock $1
+	flash_fastboot unlock $PROJECT
 	;;
 
 "crespo")
-	flash_fastboot unlock $1
+	flash_fastboot unlock $PROJECT
 	;;
 
 "galaxys2")
-	flash_heimdall $1
+	flash_heimdall $PROJECT
 	;;
 
 *)
 	if [[ $(type -t flash_${DEVICE}) = function ]]; then
-		flash_${DEVICE} $1
+		flash_${DEVICE} $PROJECT
 	else
 		echo Unsupported device \"$DEVICE\", can\'t flash
 		exit -1
