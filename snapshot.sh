@@ -9,16 +9,12 @@ branch=$(cd $b2g_root/.repo/manifests && git rev-parse --abbrev-ref HEAD)
 manifest_file=sources.xml
 output="B2G_${branch}_${DEVICE_NAME}.tar.gz"
 
-if [ $OUT_DIR ] ; then
-    if [ -d $b2g_root/$OUT_DIR ] ; then
+if [ -n "$OUT_DIR" -a -d $b2g_root/$OUT_DIR ] ; then
         gecko_exclude="--exclude=${b2g_basename}/$OUT_DIR"
-    fi
 fi
 
-if [ $GECKO_OBJDIR ] ; then
-    if [ -d $b2g_root/$GECKO_OBJDIR ] ; then
+if [ -n "$GECKO_OBJDIR" -a -d $b2g_root/$GECKO_OBJDIR ] ; then
         gecko_exclude="--exclude=${b2g_basename}/$GECKO_OBJDIR"
-    fi
 fi
 
 test $DEVICE_NAME && test $branch &&
