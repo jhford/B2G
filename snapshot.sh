@@ -17,7 +17,7 @@ if [ -n "$GECKO_OBJDIR" -a -d $b2g_root/$GECKO_OBJDIR ] ; then
         gecko_exclude="--exclude=${b2g_basename}/$GECKO_OBJDIR"
 fi
 
-test $DEVICE_NAME && test $branch &&
+[ $DEVICE_NAME ] && [ $branch ] &&
 echo Creating manifest &&
 $b2g_root/gonk-misc/add-revision.py $b2g_root/.repo/manifest.xml \
         --output $manifest_file --force --b2g-path $b2g_root --tags &&
