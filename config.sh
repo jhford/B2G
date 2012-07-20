@@ -19,7 +19,9 @@ create_manifest_repo() {
 }
 
 repo_sync() {
-	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
+    device=$1 ; shift
+    gitrepo=$1 ; shift
+	if [ "$gitrepo" = "$GIT_TEMP_REPO" ]; then
 		BRANCH="master"
 	else
 		BRANCH=$1
@@ -49,6 +51,7 @@ esac
 # Default values
 device=""
 tmp_manifest=""
+gitrepo="git://github.com/mozilla-b2g/b2g-manifest"
 
 # Make sure that at least a device is specified
 if [ $# -eq 0 ] ; then
@@ -59,6 +62,10 @@ fi
 # Parse the arguments
 while [ $# -gt 0 ] ; do
     case $1 in
+        "--git-repo")
+            shift
+            gitrepo=$1
+            ;;
         "--manifest")
             shift
             tmp_manifest=$1
@@ -81,9 +88,7 @@ done
 
 if [ -n "$tmp_manifest" ]; then
     create_manifest_repo $device $GIT_TEMP_REPO $tmp_manifest
-    GITREPO="$GIT_TEMP_REPO"
-else
-	GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
+    gitrepo="$GIT_TEMP_REPO"
 fi
 
 echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) > .tmp-config
@@ -93,13 +98,13 @@ echo DEVICE_NAME=$1 >> .tmp-config
 case "$device" in
 "galaxy-s2")
 	echo DEVICE=galaxys2 >> .tmp-config &&
-	repo_sync galaxy-s2 &&
+	repo_sync $gitrepo galaxy-s2 &&
 	(cd device/samsung/galaxys2 && ./extract-files.sh)
 	;;
 
 "galaxy-nexus")
 	echo DEVICE=maguro >> .tmp-config &&
-	repo_sync maguro &&
+	repo_sync $gitrepo maguro &&
 	(cd device/samsung/maguro && ./download-blobs.sh)
 	;;
 
@@ -111,7 +116,7 @@ case "$device" in
 
 "nexus-s")
 	echo DEVICE=crespo >> .tmp-config &&
-	repo_sync crespo &&
+	repo_sync $gitrepo crespo &&
 	(cd device/samsung/crespo && ./download-blobs.sh)
 	;;
 
@@ -123,32 +128,32 @@ case "$device" in
 
 "otoro_m4-demo")
     echo DEVICE=otoro >> .tmp-config &&
-    repo_sync otoro_m4-demo &&
+    repo_sync $gitrepo otoro_m4-demo &&
     (cd device/qcom/otoro && ./extract-files.sh)
     ;;
 
 "otoro")
 	echo DEVICE=otoro >> .tmp-config &&
-	repo_sync otoro &&
+	repo_sync $gitrepo otoro &&
 	(cd device/qcom/otoro && ./extract-files.sh)
 	;;
 
 "pandaboard")
 	echo DEVICE=panda >> .tmp-config &&
-	repo_sync panda &&
+	repo_sync $gitrepo panda &&
 	(cd device/ti/panda && ./download-blobs.sh)
 	;;
 
 "emulator")
 	echo DEVICE=generic >> .tmp-config &&
 	echo LUNCH=full-eng >> .tmp-config &&
-	repo_sync master
+	repo_sync $gitrepo master
 	;;
 
 "emulator-x86")
 	echo DEVICE=generic_x86 >> .tmp-config &&
 	echo LUNCH=full_x86-eng >> .tmp-config &&
-	repo_sync master
+	repo_sync $gitrepo master
 	;;
 
 *)
