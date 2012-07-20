@@ -1,6 +1,7 @@
 #!/bin/bash
 
 REPO=./repo
+GIT_TEMP_REPO="tmp_manifest_repo"
 
 repo_sync() {
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
@@ -33,7 +34,6 @@ case `uname` in
 	exit -1
 esac
 
-GIT_TEMP_REPO="tmp_manifest_repo"
 if [ -n "$2" ]; then
 	GITREPO=$GIT_TEMP_REPO
 	GITBRANCH="master"
