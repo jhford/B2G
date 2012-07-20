@@ -3,6 +3,21 @@
 REPO=./repo
 GIT_TEMP_REPO="tmp_manifest_repo"
 
+# This function understands how to create the repository
+# that contains the xml manifests used by repo
+create_manifest_repo() {
+    device=$1 ; shift
+    local_repo=$1 ; shift
+    manifest=$1 ; shift
+    rm -rf $local_repo &&
+    git init $local_repo &&
+    cp $manifest $local_repo/default.xml &&
+    pushd $local_repo > /dev/null &&
+    git add default.xml &&
+    git commit -m "Local Manifest" &&
+    popd > /dev/null
+}
+
 repo_sync() {
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
 		BRANCH="master"
@@ -13,9 +28,6 @@ repo_sync() {
 	$REPO init -u $GITREPO -b $BRANCH &&
 	$REPO sync
 	ret=$?
-	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
-		rm -rf $GIT_TEMP_REPO
-	fi
 	if [ $ret -ne 0 ]; then
 		echo Repo sync failed
 		exit -1
@@ -68,15 +80,8 @@ while [ $# -gt 0 ] ; do
 done
 
 if [ -n "$tmp_manifest" ]; then
-	GITREPO=$GIT_TEMP_REPO
-	GITBRANCH="master"
-	rm -rf $GITREPO &&
-	git init $GITREPO &&
-	cp $tmp_manifest $GITREPO/default.xml &&
-	cd $GITREPO &&
-	git add default.xml &&
-	git commit -m "manifest" &&
-	cd ..
+    create_manifest_repo $device $GIT_TEMP_REPO $tmp_manifest
+    GITREPO="$GIT_TEMP_REPO"
 else
 	GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
 fi
@@ -161,6 +166,10 @@ case "$device" in
 	exit -1
 	;;
 esac
+
+if [ -n $tmp_manifest ] ; then
+    rm -rf $GIT_TEMP_REPO
+fi
 
 if [ $? -ne 0 ]; then
 	echo Configuration failed
