@@ -34,12 +34,45 @@ case `uname` in
 	exit -1
 esac
 
-if [ -n "$2" ]; then
+# Default values
+device=""
+tmp_manifest=""
+
+# Make sure that at least a device is specified
+if [ $# -eq 0 ] ; then
+    echo "ERROR: you must specify a device"
+    exit -1
+fi
+
+# Parse the arguments
+while [ $# -gt 0 ] ; do
+    case $1 in
+        "--manifest")
+            shift
+            tmp_manifest=$1
+            ;;
+        *.xml )
+            echo "WARNING: using a bare argument as an xml manifest is deprecated"
+            echo "         use --manifest $1 instead"
+            tmp_manifest=$1
+            ;;
+        *)
+            if [ $device ] ; then
+                echo "ERROR: You've already specified the device $device"
+                exit -1
+            else
+                device="$1"
+            fi
+    esac
+    shift
+done
+
+if [ -n "$tmp_manifest" ]; then
 	GITREPO=$GIT_TEMP_REPO
 	GITBRANCH="master"
 	rm -rf $GITREPO &&
 	git init $GITREPO &&
-	cp $2 $GITREPO/default.xml &&
+	cp $tmp_manifest $GITREPO/default.xml &&
 	cd $GITREPO &&
 	git add default.xml &&
 	git commit -m "manifest" &&
@@ -52,7 +85,7 @@ echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) > .tmp-config
 echo GECKO_OBJDIR=$PWD/objdir-gecko >> .tmp-config
 echo DEVICE_NAME=$1 >> .tmp-config
 
-case "$1" in
+case "$device" in
 "galaxy-s2")
 	echo DEVICE=galaxys2 >> .tmp-config &&
 	repo_sync galaxy-s2 &&
