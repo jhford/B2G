@@ -11,27 +11,23 @@ create_manifest_repo() {
     manifest=$1 ; shift
     rm -rf $local_repo &&
     git init $local_repo &&
-    cp $manifest $local_repo/default.xml &&
+    cp $manifest $local_repo/$device.xml &&
     pushd $local_repo > /dev/null &&
-    git add default.xml &&
+    git add $device.xml &&
     git commit -m "Local Manifest" &&
     popd > /dev/null
 }
 
 repo_sync() {
-    device=$1 ; shift
     gitrepo=$1 ; shift
-	if [ "$gitrepo" = "$GIT_TEMP_REPO" ]; then
-		BRANCH="master"
-	else
-		BRANCH=$1
-	fi
+    device=$1 ; shift
+    branch=$1 ; shift
 	rm -rf .repo/manifest* &&
-	$REPO init -u $GITREPO -b $BRANCH &&
+	$REPO init -u $gitrepo -b $branch -m $device.xml &&
 	$REPO sync
 	ret=$?
 	if [ $ret -ne 0 ]; then
-		echo Repo sync failed
+		echo ERROR: repo sync failed
 		exit -1
 	fi
 }
@@ -50,6 +46,7 @@ esac
 
 # Default values
 device=""
+branch="master"
 tmp_manifest=""
 gitrepo="git://github.com/mozilla-b2g/b2g-manifest"
 
@@ -62,6 +59,10 @@ fi
 # Parse the arguments
 while [ $# -gt 0 ] ; do
     case $1 in
+        "--branch")
+            shift
+            branch=$1
+            ;;
         "--git-repo")
             shift
             gitrepo=$1
@@ -98,13 +99,13 @@ echo DEVICE_NAME=$1 >> .tmp-config
 case "$device" in
 "galaxy-s2")
 	echo DEVICE=galaxys2 >> .tmp-config &&
-	repo_sync $gitrepo galaxy-s2 &&
+	repo_sync $gitrepo galaxy-s2 $branch &&
 	(cd device/samsung/galaxys2 && ./extract-files.sh)
 	;;
 
 "galaxy-nexus")
 	echo DEVICE=maguro >> .tmp-config &&
-	repo_sync $gitrepo maguro &&
+	repo_sync $gitrepo maguro $branch &&
 	(cd device/samsung/maguro && ./download-blobs.sh)
 	;;
 
@@ -116,44 +117,38 @@ case "$device" in
 
 "nexus-s")
 	echo DEVICE=crespo >> .tmp-config &&
-	repo_sync $gitrepo crespo &&
+	repo_sync $gitrepo crespo $branch &&
 	(cd device/samsung/crespo && ./download-blobs.sh)
 	;;
 
 "nexus-s-4g")
 	echo DEVICE=crespo4g >> .tmp-config &&
-	repo_sync crespo4g &&
+	repo_sync $gitrepo crespo4g $branch &&
 	(cd device/samsung/crespo4g && ./download-blobs.sh)
 	;;
 
-"otoro_m4-demo")
-    echo DEVICE=otoro >> .tmp-config &&
-    repo_sync $gitrepo otoro_m4-demo &&
-    (cd device/qcom/otoro && ./extract-files.sh)
-    ;;
-
 "otoro")
 	echo DEVICE=otoro >> .tmp-config &&
-	repo_sync $gitrepo otoro &&
+	repo_sync $gitrepo otoro $branch &&
 	(cd device/qcom/otoro && ./extract-files.sh)
 	;;
 
 "pandaboard")
 	echo DEVICE=panda >> .tmp-config &&
-	repo_sync $gitrepo panda &&
+	repo_sync $gitrepo panda $branch &&
 	(cd device/ti/panda && ./download-blobs.sh)
 	;;
 
 "emulator")
 	echo DEVICE=generic >> .tmp-config &&
 	echo LUNCH=full-eng >> .tmp-config &&
-	repo_sync $gitrepo master
+	repo_sync $gitrepo emulator $branch 
 	;;
 
 "emulator-x86")
 	echo DEVICE=generic_x86 >> .tmp-config &&
 	echo LUNCH=full_x86-eng >> .tmp-config &&
-	repo_sync $gitrepo master
+	repo_sync $gitrepo emulator $branch 
 	;;
 
 *)
