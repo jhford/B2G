@@ -40,7 +40,7 @@ case `uname` in
 	CORE_COUNT=`grep processor /proc/cpuinfo | wc -l`
 	;;
 *)
-	echo Unsupported platform: `uname`
+	echo ERROR: unsupported platform: `uname`
 	exit -1
 esac
 
@@ -52,7 +52,16 @@ gitrepo="git://github.com/mozilla-b2g/b2g-manifest"
 
 # Make sure that at least a device is specified
 if [ $# -eq 0 ] ; then
-    echo "ERROR: you must specify a device"
+	echo "Usage: $0 <device name> [--branch <branch>] [--git-repo <repo_uri>] [--manifest <localmanifest>]"
+	echo
+	echo Valid devices to configure are:
+	echo - galaxy-s2
+	echo - galaxy-nexus
+	echo - nexus-s
+	echo - otoro
+	echo - pandaboard
+	echo - emulator
+	echo - emulator-x86
     exit -1
 fi
 
@@ -151,20 +160,6 @@ case "$device" in
 	repo_sync $gitrepo emulator $branch 
 	;;
 
-*)
-	echo Usage: $0 \(device name\)
-	echo
-	echo Valid devices to configure are:
-	echo - galaxy-s2
-	echo - galaxy-nexus
-	echo - nexus-s
-	echo - nexus-s-4g
-	echo - otoro
-	echo - pandaboard
-	echo - emulator
-	echo - emulator-x86
-	exit -1
-	;;
 esac
 
 if [ -n $tmp_manifest ] ; then
