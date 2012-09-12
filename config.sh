@@ -120,7 +120,7 @@ case "$device" in
 
 "optimus-l5")
 	echo DEVICE=m4 >> .tmp-config &&
-	repo_sync m4 &&
+	repo_sync $gitrepo m4 $branch &&
 	(cd device/lge/m4 && ./extract-files.sh)
 	;;
 
