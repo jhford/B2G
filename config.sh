@@ -136,10 +136,10 @@ case "$device" in
 	(cd device/samsung/crespo4g && ./download-blobs.sh)
 	;;
 
-"otoro")
-	echo DEVICE=otoro >> .tmp-config &&
+"otoro"|"unagi")
+	echo DEVICE=$device >> .tmp-config &&
 	repo_sync $gitrepo otoro $branch &&
-	(cd device/qcom/otoro && ./extract-files.sh)
+	(cd device/qcom/$device && ./extract-files.sh)
 	;;
 
 "pandaboard")
