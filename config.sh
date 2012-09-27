@@ -4,7 +4,7 @@ REPO=./repo
 
 repo_sync() {
 	rm -rf .repo/manifest* &&
-	$REPO init -u $GITREPO -b master -m $2.xml &&
+	$REPO init -u $GITREPO -b $BRANCH -m $2.xml &&
 	$REPO sync
 	ret=$?
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
@@ -28,6 +28,14 @@ case `uname` in
 	exit -1
 esac
 
+if [ -z $GITREPO ] ; then
+    GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
+fi
+
+if [ -z $BRANCH ] ; then
+    BRANCH=master
+fi
+
 GIT_TEMP_REPO="tmp_manifest_repo"
 if [ -n "$2" ]; then
 	GITREPO=$GIT_TEMP_REPO
@@ -39,8 +47,6 @@ if [ -n "$2" ]; then
 	git add $1.xml &&
 	git commit -m "manifest" &&
 	cd ..
-else
-	GITREPO="git://github.com/mozilla-b2g/b2g-manifest"
 fi
 
 echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) > .tmp-config
