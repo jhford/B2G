@@ -30,6 +30,14 @@ case `uname` in
 	exit -1
 esac
 
+if [ -n "$BRANCH" ] ; then
+  if [ -n "$2" ] ; then
+    echo "Setting BRANCH and using a local manifest is both confusing" 1>&2
+    echo "and ineffective.  This is almost certainly not what you want" 1>&2
+    exit 1
+  fi
+fi
+
 GITREPO=${GITREPO:-"git://github.com/mozilla-b2g/b2g-manifest"}
 BRANCH=${BRANCH:-master}
 
